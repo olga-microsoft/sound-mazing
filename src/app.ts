@@ -11,10 +11,12 @@ import Maze, { Hex } from './maze';
  */
 export default class HelloWorld {
 	private text: MRE.Actor = null;
+	private floorTile: MRE.Asset[];
 	private assets: MRE.AssetContainer;
 	private soundMaze: Maze = null;
 	private hexWorldSize = 1.5;
 	private musicSoundActiveInstance: MRE.MediaInstance;
+	private playingTrackId: MRE.Guid;
 
 	constructor(private context: MRE.Context, private baseUrl: string) {
 		this.context.onStarted(() => this.started());
@@ -27,7 +29,6 @@ export default class HelloWorld {
 	private started() {
 
 		this.assets = new MRE.AssetContainer(this.context);
-
 		// Create a new actor with no mesh, but some text.
 		this.text = MRE.Actor.Create(this.context, {
 			actor: {
@@ -36,7 +37,7 @@ export default class HelloWorld {
 					app: { position: { x: 0, y: 0.5, z: 0 } }
 				},
 				text: {
-					contents: "Enjoy your sound mazing experience!",
+					contents: "Enjoy your sound mazing experience! \nPlease wait while we are fetching music..",
 					anchor: MRE.TextAnchorLocation.MiddleCenter,
 					color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
 					height: 0.3
@@ -81,7 +82,21 @@ export default class HelloWorld {
 
 	private addMaze() {
 		//async
-		this.soundMaze.initialize().then((isSuccess) => {
+		this.assets.loadGltf(`${this.baseUrl}/uxr_hexagon_tile/scene.gltf`, 'box')
+		.then(gltf => {
+			console.log('loaded floor tile model. building the maze visuals');
+			this.floorTile = gltf;
+
+			let seed1TrackId = '7ytR5pFWmSjzHJIeQkgog4';
+			let seed2TrackId = '3kwgqoBqTwoAH4nT29TYrq';
+
+			if (this.context.sessionId === 'metal') {
+				seed1TrackId = '29muRA6aply0SHg0Z50slB';
+				seed2TrackId = '5uunXHE4kIW6uS4HWAXaOQ';
+			}
+
+			return this.soundMaze.initialize(seed1TrackId, seed2TrackId);
+		}).then((isSuccess) => {
 			if (isSuccess) {
 				this.soundMaze.getCells().then((hexes) => {
 					if (hexes.length <= 6) {
@@ -200,10 +215,21 @@ export default class HelloWorld {
 
 				const cycleMusicState = () => {
 					if (this.musicSoundActiveInstance) {
-						//if (this.musicSoundActiveInstance.mediaAssetId === musicAsset.id)
 						this.musicSoundActiveInstance.stop();
 						this.musicSoundActiveInstance = null;
+						if (this.playingTrackId !== musicAsset.id) {
+							this.playingTrackId = musicAsset.id;
+							this.musicSoundActiveInstance = boxActor.startVideoStream(musicAsset.id,
+								{
+									volume: 0.2,
+									looping: false,
+									spread: 0.7,
+									rolloffStartDistance: 2.5,
+									time: 30.0
+								});
+						}
 					} else {
+						this.playingTrackId = musicAsset.id;
 						this.musicSoundActiveInstance = boxActor.startVideoStream(musicAsset.id,
 							{
 								volume: 0.2,
@@ -245,7 +271,28 @@ export default class HelloWorld {
 
 	addFloor(hex: Hex) {
 		// todo
-		//throw new Error("Method not implemented.");
+
+		const hexPos = this.calculateWorldHexPosition(hex.q, hex.r);
+		hexPos.y = -2;
+
+		const rotation = MRE.Quaternion.FromEulerAngles(0, 13.5, 0);
+
+		const cube = MRE.Actor.CreateFromPrefab(this.context, {
+			// Use the preloaded glTF for each box
+			firstPrefabFrom: this.floorTile,
+			// Also apply the following generic actor properties.
+			actor: {
+				name: 'Floor',
+				transform: {
+					app: {
+						position: hexPos,
+						rotation: rotation
+					},
+					local: { scale: { x: 0.5, y: 1, z: 0.5 } }
+				}
+			}
+		});
+
 	}
 
 

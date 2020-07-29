@@ -40,10 +40,8 @@ export class Hex {
 }
 
 export default class MuzicMaze {
-	private defaultMazeDepth = 3;
+	private defaultMazeDepth = 7;
 	private Spotify: SpotifyAPI = null;
-	private seed1TrackId = '29muRA6aply0SHg0Z50slB';
-	private seed2TrackId = '5uunXHE4kIW6uS4HWAXaOQ';
 	private trackMap = new Map<string, Track>();
 	private cells =  new Map<string, Hex>();
 	private isInitialized = false;
@@ -70,28 +68,28 @@ export default class MuzicMaze {
 		return null;
 	}
 
-	public async initialize() {
+	public async initialize(seed1TrackId: string, seed2TrackId: string) {
 		if (this.isInitialized) return;
 
 		this.Spotify = new SpotifyAPI();
 		// get seed track info
 
 		//https://classy-mangrove-vertebra.glitch.me/recommendations/29muRA6aply0SHg0Z50slB-5uunXHE4kIW6uS4HWAXaOQ
-		return this.Spotify.getNextRecommendation('29muRA6aply0SHg0Z50slB', '5uunXHE4kIW6uS4HWAXaOQ')
+		return this.Spotify.getNextRecommendation(seed1TrackId, seed2TrackId)
 			.then(async (track) => {
 			if (track) {
 				this.trackMap.set(track.SpotifyId, track);
-				this.Spotify.getTrackInfo(this.seed1TrackId).then((t) => {
-					this.trackMap.set(this.seed1TrackId, t);
+				this.Spotify.getTrackInfo(seed1TrackId).then((t) => {
+					this.trackMap.set(seed1TrackId, t);
 				});
-				this.Spotify.getTrackInfo(this.seed2TrackId).then((t) => {
-					this.trackMap.set(this.seed2TrackId, t);
+				this.Spotify.getTrackInfo(seed2TrackId).then((t) => {
+					this.trackMap.set(seed2TrackId, t);
 				});
 				console.log('Building maze with third seed track: ' + track.SpotifyId);
 				let startingHex = new Hex({q: 0, r: 0});
 				startingHex.isWalkable = true;
 				// not used?
-				startingHex.accessedTracks = [this.seed1TrackId, this.seed2TrackId, track.SpotifyId];
+				startingHex.accessedTracks = [seed1TrackId, seed2TrackId, track.SpotifyId];
 
 				await this.buildMaze(this.defaultMazeDepth, startingHex);
 				this.isInitialized = true;
@@ -148,6 +146,7 @@ export default class MuzicMaze {
 			const isFull = await this.tryAddTracks(hex, neighbors);
 			if (isFull || distanceFromCenter >= depth) {
 				processedHexes.add(this.getCoordString(hex.getCoord()));
+				this.save(hex);
 			}
 
 			if (distanceFromCenter < depth) {
