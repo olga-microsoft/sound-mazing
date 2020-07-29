@@ -5,7 +5,6 @@
 
 import * as MRE from '@microsoft/mixed-reality-extension-sdk';
 import Maze, { Hex } from './maze';
-import { Track } from './spotify';
 
 /**
  * The main class of this app. All the logic goes here.
@@ -19,13 +18,12 @@ export default class HelloWorld {
 	constructor(private context: MRE.Context, private baseUrl: string) {
 		this.context.onStarted(() => this.started());
 		this.soundMaze = new Maze();
-		this.soundMaze.initialize();
 	}
 
 	/**
 	 * Once the context is "started", initialize the app.
 	 */
-	private async started() {
+	private started() {
 
 		this.assets = new MRE.AssetContainer(this.context);
 
@@ -77,19 +75,27 @@ export default class HelloWorld {
 		// 	easing: MRE.AnimationEaseCurves.Linear
 		// }]});
 
-		await this.addMaze();
-
+		this.addMaze();
 	}
 
-	private async addMaze(): Promise<boolean> {
-		let cellsArray = this.soundMaze.getCells();
-		if (cellsArray.length <= 6) {
-			console.log('not enough cells');
-			return;
-		}
+	private addMaze() {
+		//async
+		this.soundMaze.initialize().then((isSuccess) => {
+			if (isSuccess) {
+				this.soundMaze.getCells().then((hexes) => {
+					if (hexes.length <= 6) {
+						console.log('not enough cells');
+						return;
+					}
 
-		cellsArray.forEach(hex => {
-			this.addHex(hex);
+					hexes.forEach(hex => {
+						this.addHex(hex);
+					});
+				});
+			}
+		})
+		.catch(ex => {
+			console.error('Add Maze ', ex);
 		});
 	}
 
@@ -106,8 +112,8 @@ export default class HelloWorld {
 
 		//https://www.redblobgames.com/grids/hexagons/#hex-to-pixel
 		pos.x = this.hexWorldSize * (3. / 2 * x);
-		pos.y = this.hexWorldSize * (Math.sqrt(3) / 2 * x + Math.sqrt(3) * y)
-		//pos.z = 0;
+		pos.y = 1.5;
+		pos.z = this.hexWorldSize * (Math.sqrt(3) / 2 * x + Math.sqrt(3) * y)
 
 		return pos;
 	}
@@ -120,7 +126,7 @@ export default class HelloWorld {
 			return;
 		}
 
-		let hexPos = this.calculateWorldHexPosition(hex.x, hex.y);
+		let hexPos = this.calculateWorldHexPosition(hex.q, hex.r);
 
 		const trackActors: MRE.Actor[] = []; //this.buildActorsForTrack(hex, trackInfo);
 
@@ -132,15 +138,15 @@ export default class HelloWorld {
 					app: { position: hexPos }
 				},
 				text: {
-					contents: trackInfo.Name + ' by ' + trackInfo.Artist,
+					contents: trackInfo.Name + '\nby ' + trackInfo.Artist,
 					anchor: MRE.TextAnchorLocation.MiddleCenter,
-					color: { r: 30 / 255, g: 206 / 255, b: 213 / 255 },
-					height: 0.3
+					color: { r: 206 / 255, g: 206 / 255, b: 213 / 255 },
+					height: 0.2
 				}
 			}
 		});
 
-		if (!trackInfo.ImageUrl) {
+		if (trackInfo.ImageUrl) {
 			const tex = this.assets.createTexture(hex.getName(), {
 				uri: trackInfo.ImageUrl
 			});
@@ -151,17 +157,18 @@ export default class HelloWorld {
 				emissiveTextureId: tex.id
 			});
 
-			let boxActor = MRE.Actor.Create(this.context, {
+			const boxActor = MRE.Actor.Create(this.context, {
 				actor: {
 					name: 'Box' + trackInfo.SpotifyId,
 					parentId: trackLabel.id,
 					appearance: {
-						meshId: this.assets.createBoxMesh(`mesh${trackInfo.SpotifyId}`, 0.4, 0.4, 0.4).id
+						meshId: this.assets.createBoxMesh(`mesh${trackInfo.SpotifyId}`, 1.4, 1.4, 1.4).id,
+						materialId: mat.id
 					},
 					collider: { geometry: { shape: MRE.ColliderType.Auto } },
 					transform: {
 						local: {
-							position: { x: 0, y: 0, z: -0.5 }
+							position: { x: 0, y: -1.5, z: -0.5 }
 						}
 					}
 				}
@@ -175,7 +182,7 @@ export default class HelloWorld {
 				// Trigger the grow/shrink animations on hover.
 				buttonBehavior.onHover('enter', () => {
 					boxActor.animateTo(
-						{ transform: { local: { scale: { x: 1.1, y: 0.5, z: 0.5 } } } },
+						{ transform: { local: { scale: { x: 1.3, y: 1.3, z: 1.3 } } } },
 						0.3,
 						MRE.AnimationEaseCurves.EaseOutSine);
 				});
