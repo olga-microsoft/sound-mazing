@@ -14,6 +14,7 @@ export default class HelloWorld {
 	private assets: MRE.AssetContainer;
 	private soundMaze: Maze = null;
 	private hexWorldSize = 1.5;
+	private musicSoundActiveInstance: MRE.MediaInstance;
 
 	constructor(private context: MRE.Context, private baseUrl: string) {
 		this.context.onStarted(() => this.started());
@@ -91,6 +92,8 @@ export default class HelloWorld {
 					hexes.forEach(hex => {
 						this.addHex(hex);
 					});
+
+					this.text.appearance.enabled = false;
 				});
 			}
 		})
@@ -175,6 +178,43 @@ export default class HelloWorld {
 			});
 
 			if (trackInfo.AudioPreviewUrl) {
+				const musicAsset = this.assets.createVideoStream('Stream_' + trackInfo.SpotifyId, {
+					uri: trackInfo.AudioPreviewUrl+'&lol=cmonunity.mp3',
+					duration: 30
+				});
+				// const musicAsset = this.assets.createSound('Sound_' + trackInfo.SpotifyId, {
+				// 	uri: trackInfo.AudioPreviewUrl+'&lol=cmonunity.mp3',
+				// 	duration: 30
+				// });
+
+				// const musicSoundInstance = boxActor.startSound(musicAsset.id,
+				// 	{
+				// 		volume: 0.2,
+				// 		looping: false,
+				// 		doppler: 0.0,
+				// 		spread: 0.7,
+				// 		rolloffStartDistance: 2.5,
+				// 		time: 30.0
+				// 	});
+				// musicSoundInstance.pause();
+
+				const cycleMusicState = () => {
+					if (this.musicSoundActiveInstance) {
+						//if (this.musicSoundActiveInstance.mediaAssetId === musicAsset.id)
+						this.musicSoundActiveInstance.stop();
+						this.musicSoundActiveInstance = null;
+					} else {
+						this.musicSoundActiveInstance = boxActor.startVideoStream(musicAsset.id,
+							{
+								volume: 0.2,
+								looping: false,
+								spread: 0.7,
+								rolloffStartDistance: 2.5,
+								time: 30.0
+							});
+					}
+				};
+
 				// Set up cursor interaction. We add the input behavior ButtonBehavior to the cube.
 				// Button behaviors have two pairs of events: hover start/stop, and click start/stop.
 				const buttonBehavior = boxActor.setBehavior(MRE.ButtonBehavior);
@@ -193,10 +233,10 @@ export default class HelloWorld {
 						MRE.AnimationEaseCurves.EaseOutSine);
 				});
 
+
+
 				// When clicked, start playing audio preview.
-				buttonBehavior.onClick(_ => {
-					// TODO: audio.play();
-				});
+				buttonBehavior.onClick(cycleMusicState);
 			}
 			trackActors.push(boxActor);
 		}
