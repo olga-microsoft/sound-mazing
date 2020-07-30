@@ -23,8 +23,8 @@ dotenv.config();
 function runApp() {
 	// Start listening for connections, and serve static files.
 	const server = new WebHost({
-		baseUrl: 'https://sound-mazing.azurewebsites.net',
-		port: process.env.PORT,
+		//baseUrl: 'https://sound-mazing.azurewebsites.net',
+		port: 443, // exposed through Docker instead of process.env.PORT,
 		baseDir: resolvePath(__dirname, '../public')
 	});
 

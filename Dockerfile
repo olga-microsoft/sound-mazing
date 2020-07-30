@@ -10,7 +10,5 @@ RUN ["npm", "run", "build-only"]
 
 COPY public ./public/
 
-EXPOSE 3901/tcp
-EXPOSE 8080/tcp
-EXPOSE 80/tcp
+EXPOSE 443/tcp
 CMD ["npm", "start"]
