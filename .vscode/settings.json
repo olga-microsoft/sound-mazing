@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.deploySubpath": ".",
+    "appService.defaultWebAppToDeploy": "/subscriptions/66ffdf41-281b-4b96-82e5-7529bb2760e8/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/sound-mazing"
+}

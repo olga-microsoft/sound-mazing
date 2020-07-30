@@ -23,7 +23,8 @@ dotenv.config();
 function runApp() {
 	// Start listening for connections, and serve static files.
 	const server = new WebHost({
-		// baseUrl: 'http://<ngrok-id>.ngrok.io',
+		baseUrl: 'https://sound-mazing.azurewebsites.net',
+		port: process.env.PORT,
 		baseDir: resolvePath(__dirname, '../public')
 	});
 

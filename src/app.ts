@@ -275,7 +275,7 @@ export default class HelloWorld {
 		const hexPos = this.calculateWorldHexPosition(hex.q, hex.r);
 		hexPos.y = -2;
 
-		const rotation = MRE.Quaternion.FromEulerAngles(0, 13.5, 0);
+		const rotation = MRE.Quaternion.FromEulerAngles(0, -15, 0);
 
 		const cube = MRE.Actor.CreateFromPrefab(this.context, {
 			// Use the preloaded glTF for each box
